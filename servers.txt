@@ -1,0 +1,4 @@
+8.8.8.8,Google DNS,53
+1.1.1.1,Cloudflare HTTPS,443
+8.8.8.8,Closed Port Test,81
+192.168.1.1,Router,0

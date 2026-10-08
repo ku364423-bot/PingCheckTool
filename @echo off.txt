@@ -1,0 +1,62 @@
+@echo off
+cd /d "%~dp0"
+title Ping Check IP Tool
+color 0A
+
+set ok=0
+set fail=0
+set logfile=ping_log.txt
+
+echo ===================================== >> %logfile%
+echo Check at %date% %time% >> %logfile%
+
+echo =====================================
+echo Check All Servers
+echo =====================================
+echo.
+
+for /f "tokens=1,2,3 delims=," %%a in (servers.txt) do (
+    call :check "%%b" %%a %%c
+)
+
+echo.
+echo =====================================
+echo OK = %ok%
+echo FAIL = %fail%
+echo =====================================
+echo OK=%ok% FAIL=%fail% >> %logfile%
+
+if %fail% GTR 0 (
+    start "" powershell -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('WARNING: %fail% server(s) FAIL! Check ping_log.txt','Ping Check','OK','Warning')"
+    powershell -c "[console]::beep(1000,4000)"
+)
+
+exit
+
+:check
+ping -n 3 %2 | find "TTL=" >nul
+if errorlevel 1 (
+    echo [FAIL] %~1 ^(%2^) - PING
+    echo [FAIL] %~1 ^(%2^) - PING >> %logfile%
+    set /a fail+=1
+    goto :eof
+)
+
+if "%3"=="0" (
+    echo [ OK ] %~1 ^(%2^) - PING
+    echo [ OK ] %~1 ^(%2^) - PING >> %logfile%
+    set /a ok+=1
+    goto :eof
+)
+
+powershell -c "if (Test-NetConnection %2 -Port %3 -InformationLevel Quiet -WarningAction SilentlyContinue) {exit 0} else {exit 1}"
+if errorlevel 1 (
+    echo [FAIL] %~1 ^(%2:%3^) - PORT
+    echo [FAIL] %~1 ^(%2:%3^) - PORT >> %logfile%
+    set /a fail+=1
+) else (
+    echo [ OK ] %~1 ^(%2:%3^) - PORT
+    echo [ OK ] %~1 ^(%2:%3^) - PORT >> %logfile%
+    set /a ok+=1
+)
+goto :eof
